@@ -24,7 +24,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/lixinio/weixin"
+	"github.com/lixinio/weixin/utils"
 	"github.com/lixinio/weixin/wxwork/agent"
 )
 
@@ -36,7 +36,7 @@ const (
 )
 
 type MaterialApi struct {
-	*weixin.Client
+	*utils.Client
 }
 
 func NewAgentApi(agent *agent.Agent) *MaterialApi {

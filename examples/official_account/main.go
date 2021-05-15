@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/lixinio/weixin/redis"
+	"github.com/lixinio/weixin/utils/redis"
 	"github.com/lixinio/weixin/weixin/official_account"
 	"github.com/lixinio/weixin/weixin/user_api"
 )
