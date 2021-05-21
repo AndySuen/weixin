@@ -2,13 +2,57 @@ package main
 
 import (
 	"fmt"
-	"net/url"
+	"io"
+	"net/http"
 
 	"github.com/lixinio/weixin/test"
 	"github.com/lixinio/weixin/utils/redis"
 	"github.com/lixinio/weixin/weixin/official_account"
-	"github.com/lixinio/weixin/weixin/user_api"
 )
+
+func httpAbort(w http.ResponseWriter, code int) {
+	w.WriteHeader(http.StatusBadRequest)
+	io.WriteString(w, http.StatusText(http.StatusBadRequest))
+}
+
+func index(oa *official_account.OfficialAccount) http.HandlerFunc {
+	html := `
+<form method="get" action="/login">
+    <button type="submit">微信登录</button>
+</form>
+	`
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, html)
+	}
+}
+
+func login(oa *official_account.OfficialAccount) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("http://%s/login/callback", r.Host)
+		url = oa.GetAuthorizeUrl(url, official_account.ScopeSnsapiUserinfo, "state")
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+}
+
+func callback(oa *official_account.OfficialAccount) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		snsAccessToken, err := oa.GetSnsAccessToken(code)
+		if err != nil {
+			httpAbort(w, http.StatusForbidden)
+			return
+		}
+
+		user_info, err := oa.GetUserInfo(snsAccessToken.AccessToken, snsAccessToken.Openid, "")
+		if err != nil {
+			httpAbort(w, http.StatusForbidden)
+			return
+		}
+
+		fmt.Fprintf(w, user_info.Nickname)
+	}
+}
 
 func main() {
 	cache := redis.NewRedis(&redis.Config{RedisUrl: test.CacheUrl})
@@ -17,10 +61,13 @@ func main() {
 		Secret: test.OfficialAccountSecret,
 	})
 
-	userApi := user_api.NewOfficialAccountApi(officialAccount)
+	http.HandleFunc("/", index(officialAccount))
+	http.HandleFunc("/login", login(officialAccount))
+	http.HandleFunc("/login/callback", callback(officialAccount))
 
-	params := url.Values{}
-	b, e := userApi.Get(params)
-	fmt.Println(string(b), " ", e)
+	err := http.ListenAndServe(":9998", nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 }

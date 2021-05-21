@@ -14,3 +14,6 @@
 > 按需要更换域名
 > 
 > 按需要更换`$CORP_ID`和`$AGENT_ID`
+
+## 菜单
+本实例支持菜单接口回调， 具体菜单配置可见单元测试 `wxwork/agent/app_test.go`
