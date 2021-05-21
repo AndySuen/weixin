@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lixinio/weixin/test"
 	"github.com/lixinio/weixin/utils/redis"
 	"github.com/lixinio/weixin/weixin/official_account"
 	"github.com/lixinio/weixin/weixin/server_api"
@@ -135,19 +136,18 @@ func weixinCallback(serverApi *server_api.ServerApi) http.HandlerFunc {
 }
 
 func main() {
-
-	cache := redis.NewRedis(&redis.Config{RedisUrl: "redis://127.0.0.1:6379/1"})
+	cache := redis.NewRedis(&redis.Config{RedisUrl: test.CacheUrl})
 	officialAccount := official_account.New(cache, &official_account.Config{
-		Appid:  "wx59864a9e578229ea",
-		Secret: "e4a2a478789ccc9378d5e93533689c6b",
+		Appid:  test.OfficialAccountAppid,
+		Secret: test.OfficialAccountSecret,
 	})
 	serverApi := server_api.NewOfficialAccountApi(
-		"Oogheeshue7oeS2ahvikaiBahweepui5",
-		"Iepaifoh8vohhe2nu7kogooga7ahloec2mahweefoom",
+		test.OfficialAccountToken,
+		test.OfficialAccountAESKey,
 		officialAccount,
 	)
 
-	http.HandleFunc("/weixin", weixinCallback(serverApi))
+	http.HandleFunc(fmt.Sprintf("/weixin/%s", test.OfficialAccountAppid), weixinCallback(serverApi))
 
 	http.ListenAndServe(":5000", nil)
 }
