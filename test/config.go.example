@@ -17,4 +17,6 @@ const (
 	OfficialAccountSecret = "eeRaquaec0nie7gughahC3xeobaethai8OoGh5DahSh"
 	OfficialAccountToken  = "othuiRi3beero0xut6ohquiewahthaixu7cor8OShai" // 接收消息服务器配置（Token）
 	OfficialAccountAESKey = "teingie6aeSha9uo7aiC6phaez0moofooy7pa3kohCa" // 接收消息服务器配置（EncodingAESKey）
+	OfficialAccountAuthKey   = "MP_verify_7JuEh0gsFco1d0Uq.txt"           // 域名所有权检验 文件名
+	OfficialAccountAuthValue = "7JuEh0gsFco1d0Uq"                         // 域名所有权检验 文件内容
 )

@@ -64,8 +64,11 @@ func main() {
 	http.HandleFunc("/", index(officialAccount))
 	http.HandleFunc("/login", login(officialAccount))
 	http.HandleFunc("/login/callback", callback(officialAccount))
+	http.HandleFunc(fmt.Sprintf("/%s", test.OfficialAccountAuthKey), func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, test.OfficialAccountAuthValue)
+	})
 
-	err := http.ListenAndServe(":9998", nil)
+	err := http.ListenAndServe(":5000", nil)
 	if err != nil {
 		fmt.Println(err)
 	}
