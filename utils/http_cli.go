@@ -32,6 +32,23 @@ var (
 	UserAgent        = "lixinio/weixin"
 )
 
+func filterFlags(content string) string {
+	for i, char := range content {
+		if char == ' ' || char == ';' {
+			return content[:i]
+		}
+	}
+	return content
+}
+
+func ContentType(resp *http.Response) string {
+	ct := resp.Header.Get("Content-Type")
+	if len(ct) > 0 {
+		return filterFlags(ct)
+	}
+	return ""
+}
+
 /*
 HttpClient 用于向微信接口发送请求
 */
@@ -68,6 +85,18 @@ func (client *Client) HTTPGetWithParams(uri string, params url.Values) (resp []b
 	return client.httpDo(req)
 }
 
+// 素材下载， 需要根据Content-Type来判断Body， 可以是json，可能是二进制
+func (client *Client) HTTPGetWithParamsRaw(uri string, params url.Values) (resp *http.Response, err error) {
+	newUrl, err := client.applyAccessToken(uri, params)
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodGet, client.serverUrl+newUrl, nil)
+	req.Header.Add("User-Agent", client.userAgent)
+	return http.DefaultClient.Do(req)
+}
+
 //HTTPPost POST 请求
 func (client *Client) HTTPPost(uri string, payload io.Reader, contentType string) (resp []byte, err error) {
 	newUrl, err := client.applyAccessToken(uri, url.Values{})
@@ -99,17 +128,10 @@ func (client *Client) httpDo(req *http.Request) (resp []byte, err error) {
 	}
 	defer response.Body.Close()
 
-	resp, err = responseFilter(response)
+	resp, err = ResponseFilter(response)
 
 	// 发现 access_token 过期
 	if err == ErrorAccessToken {
-
-		// 主动 通知 access_token 过期
-		// err = client.Ctx.AccessToken.NoticeAccessTokenExpireHandler(client.Ctx)
-		// if err != nil {
-		// 	return
-		// }
-
 		// 通知到位后 access_token 会被刷新，那么可以 retry 了
 		var accessToken string
 		accessToken, err = client.accessTokenCache.GetAccessToken()
@@ -122,17 +144,13 @@ func (client *Client) httpDo(req *http.Request) (resp []byte, err error) {
 		q.Set("access_token", accessToken)
 		req.URL.RawQuery = q.Encode()
 
-		// if client.Ctx.Corporation.Logger != nil {
-		// 	client.Ctx.Corporation.Logger.Printf("%v retry %s %s Headers %v", ErrorAccessToken, req.Method, req.URL.String(), req.Header)
-		// }
-
 		response, err = http.DefaultClient.Do(req)
 		if err != nil {
 			return
 		}
 		defer response.Body.Close()
 
-		resp, err = responseFilter(response)
+		resp, err = ResponseFilter(response)
 	}
 
 	// -1 系统繁忙，此时请开发者稍候再试
@@ -149,7 +167,7 @@ func (client *Client) httpDo(req *http.Request) (resp []byte, err error) {
 		}
 		defer response.Body.Close()
 
-		resp, err = responseFilter(response)
+		resp, err = ResponseFilter(response)
 	}
 
 	return
@@ -179,7 +197,7 @@ func (client *Client) applyAccessToken(oldUrl string, params url.Values) (newUrl
 
 - 接口响应错误码 errcode 不为 0
 */
-func responseFilter(response *http.Response) (resp []byte, err error) {
+func ResponseFilter(response *http.Response) (resp []byte, err error) {
 	if response.StatusCode != http.StatusOK {
 		err = fmt.Errorf("Status %s", response.Status)
 		return
