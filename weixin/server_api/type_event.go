@@ -17,10 +17,11 @@ package server_api
 // limitations under the License.
 
 const (
-	EventTypeSubscribe   = "subscribe"   // 关注
-	EventTypeUnsubscribe = "unsubscribe" // 取关
-	EventTypeScan        = "SCAN"        // 已关注用户 扫码
-	EventTypeLocation    = "LOCATION"    // 上报位置
+	EventTypeSubscribe        = "subscribe"              // 关注
+	EventTypeUnsubscribe      = "unsubscribe"            // 取关
+	EventTypeScan             = "SCAN"                   // 已关注用户 扫码
+	EventTypeLocation         = "LOCATION"               // 上报位置
+	EventTypeAuthorizeInvoice = "user_authorize_invoice" // 收取授权完成事件推送
 )
 
 type Event MessageEvent

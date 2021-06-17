@@ -19,4 +19,11 @@ const (
 	OfficialAccountAESKey = "teingie6aeSha9uo7aiC6phaez0moofooy7pa3kohCa" // 接收消息服务器配置（EncodingAESKey）
 	OfficialAccountAuthKey   = "MP_verify_7JuEh0gsFco1d0Uq.txt"           // 域名所有权检验 文件名
 	OfficialAccountAuthValue = "7JuEh0gsFco1d0Uq"                         // 域名所有权检验 文件内容
+
+	// 发票
+	InvoicePayee             = "深圳市XXX信息技术有限公司"
+	InvoiceType              = "广东省增值税普通发票"
+	InvoiceCustomUrlName     = "XXX公司"
+	InvoiceCustomURL         = "https://www.xxx.com"
+	InvoiceCustomUrlSubTitle = "XXX"
 )

@@ -8,6 +8,7 @@ import (
 	"github.com/lixinio/weixin/test"
 	"github.com/lixinio/weixin/utils/redis"
 	"github.com/lixinio/weixin/weixin/official_account"
+	"github.com/lixinio/weixin/weixin/server_api"
 )
 
 func httpAbort(w http.ResponseWriter, code int) {
@@ -40,12 +41,14 @@ func callback(oa *official_account.OfficialAccount) http.HandlerFunc {
 		code := r.URL.Query().Get("code")
 		snsAccessToken, err := oa.GetSnsAccessToken(code)
 		if err != nil {
+			fmt.Println(err)
 			httpAbort(w, http.StatusForbidden)
 			return
 		}
 
 		user_info, err := oa.GetUserInfo(snsAccessToken.AccessToken, snsAccessToken.Openid, "")
 		if err != nil {
+			fmt.Println(err)
 			httpAbort(w, http.StatusForbidden)
 			return
 		}
@@ -60,6 +63,11 @@ func main() {
 		Appid:  test.OfficialAccountAppid,
 		Secret: test.OfficialAccountSecret,
 	})
+	serverApi := server_api.NewOfficialAccountApi(
+		test.OfficialAccountToken,
+		test.OfficialAccountAESKey,
+		officialAccount,
+	)
 
 	http.HandleFunc("/", index(officialAccount))
 	http.HandleFunc("/login", login(officialAccount))
@@ -67,6 +75,7 @@ func main() {
 	http.HandleFunc(fmt.Sprintf("/%s", test.OfficialAccountAuthKey), func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, test.OfficialAccountAuthValue)
 	})
+	http.HandleFunc(fmt.Sprintf("/weixin/%s", test.OfficialAccountAppid), weixinCallback(serverApi))
 
 	err := http.ListenAndServe(":5000", nil)
 	if err != nil {

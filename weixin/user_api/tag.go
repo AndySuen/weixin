@@ -69,7 +69,7 @@ See: https://developers.weixin.qq.com/doc/offiaccount/User_Management/User_Tag_M
 
 POST https://api.weixin.qq.com/cgi-bin/tags/create?access_token=ACCESS_TOKEN
 */
-func (api *UserApi) CreateTagEx(payload []byte) (resp []byte, err error) {
+func (api *UserApi) CreateTagRaw(payload []byte) (resp []byte, err error) {
 	return api.Client.HTTPPost(apiTagCreate, bytes.NewReader(payload), "application/json;charset=utf-8")
 }
 func (api *UserApi) CreateTag(tagName string) (*TagInfo, error) {
@@ -80,7 +80,7 @@ func (api *UserApi) CreateTag(tagName string) (*TagInfo, error) {
 	params := map[string]*struct {
 		Name string `json:"name"`
 	}{"tag": tag}
-	err := utils.ApiPostWrapper(api.CreateTagEx, params, &result)
+	err := utils.ApiPostWrapper(api.CreateTagRaw, params, &result)
 
 	if err != nil {
 		return nil, err

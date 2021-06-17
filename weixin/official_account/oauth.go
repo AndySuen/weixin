@@ -235,6 +235,23 @@ See: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html#62
 GET https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=ACCESS_TOKEN&type=jsapi
 */
 func (officialAccount *OfficialAccount) GetJSApiTicket() (jsapiTicket string, expiresIn int64, err error) {
+	return officialAccount.getApiTicket("jsapi")
+}
+
+/*
+获取 wxcard_ticket
+
+商户在调用授权页前需要先获取一个7200s过期的授权页ticket，在获取授权页接口中，该ticket作为参数传入，加强安全性。
+
+See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Vendor_API_List.html#1
+
+GET https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=ACCESS_TOKEN&type=wx_card
+*/
+func (officialAccount *OfficialAccount) GetWxCardApiTicket() (jsapiTicket string, expiresIn int64, err error) {
+	return officialAccount.getApiTicket("wx_card")
+}
+
+func (officialAccount *OfficialAccount) getApiTicket(tp string) (jsapiTicket string, expiresIn int64, err error) {
 
 	jsapiTicketResp := struct {
 		Ticket    string `json:"ticket"`
@@ -242,7 +259,7 @@ func (officialAccount *OfficialAccount) GetJSApiTicket() (jsapiTicket string, ex
 	}{}
 
 	params := url.Values{}
-	params.Add("type", "jsapi")
+	params.Add("type", tp)
 
 	var body []byte
 	body, err = officialAccount.Client.HTTPGetWithParams(apiGetJSApiTicket, params)
