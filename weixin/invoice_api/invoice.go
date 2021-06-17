@@ -19,6 +19,8 @@ package invoice_api
 
 import (
 	"bytes"
+	"encoding/json"
+	"io"
 	"net/url"
 
 	"github.com/lixinio/weixin/utils"
@@ -68,7 +70,11 @@ type SetbizattrObj struct {
 }
 
 func (api *InvoiceApi) SetbizattrRaw(payload []byte, params url.Values) (resp []byte, err error) {
-	return api.Client.HTTPPost(apiSetbizattr+"?"+params.Encode(), bytes.NewReader(payload), "application/json;charset=utf-8")
+	return api.Client.HTTPPost(
+		apiSetbizattr+"?"+params.Encode(),
+		bytes.NewReader(payload),
+		"application/json;charset=utf-8",
+	)
 }
 func (api *InvoiceApi) SetContact(param *SetbizattrObj) error {
 	params := url.Values{}
@@ -275,6 +281,31 @@ func (api *InvoiceApi) PlatformCreateCard(param *CreateCardObj) (string, error) 
 }
 
 /*
+上传PDF
+商户或开票平台可以通过该接口上传PDF。PDF上传成功后将获得发票文件的标识，后续可以通过插卡接口将PDF关联到用户的发票卡券上，一并插入到收票用户的卡包中
+See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Invoicing_Platform_API_List.html
+POST https://api.weixin.qq.com/card/invoice/platform/setpdf?access_token={access_token}
+*/
+func (api *InvoiceApi) PlatformSetpdf(filename string, length int64, content io.Reader) (mediaID string, err error) {
+
+	var resp []byte
+	resp, err = api.Client.HTTPUpload(apiPlatformSetpdf, content, "pdf", filename, length)
+	if err != nil {
+		return
+	}
+
+	result := &struct {
+		SMediaID string `json:"s_media_id"`
+	}{}
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
+		return
+	}
+	mediaID = result.SMediaID
+	return
+}
+
+/*
 统一开票接口-开具蓝票
 对于使用微信电子发票开票接入能力的商户，在公众号后台选择任何一家开票平台的套餐，都可以使用本接口实现电子发票的开具
 See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Vendor_API_List.html
@@ -302,16 +333,6 @@ POST https://api.weixin.qq.com/card/invoice/queryinvoceinfo?access_token={access
 */
 func (api *InvoiceApi) QueryInvoceInfo(payload []byte) (resp []byte, err error) {
 	return api.Client.HTTPPost(apiQueryInvoceInfo, bytes.NewReader(payload), "application/json;charset=utf-8")
-}
-
-/*
-上传PDF
-商户或开票平台可以通过该接口上传PDF。PDF上传成功后将获得发票文件的标识，后续可以通过插卡接口将PDF关联到用户的发票卡券上，一并插入到收票用户的卡包中
-See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Invoicing_Platform_API_List.html
-POST https://api.weixin.qq.com/card/invoice/platform/setpdf?access_token={access_token}
-*/
-func (api *InvoiceApi) PlatformSetpdf(payload []byte) (resp []byte, err error) {
-	return api.Client.HTTPPost(apiPlatformSetpdf, bytes.NewReader(payload), "application/json;charset=utf-8")
 }
 
 /*

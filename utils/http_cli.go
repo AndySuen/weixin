@@ -16,13 +16,16 @@ package utils
 // limitations under the License.
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -95,6 +98,40 @@ func (client *Client) HTTPGetWithParamsRaw(uri string, params url.Values) (resp 
 	req, err := http.NewRequest(http.MethodGet, client.serverUrl+newUrl, nil)
 	req.Header.Add("User-Agent", client.userAgent)
 	return http.DefaultClient.Do(req)
+}
+
+//HTTPPost POST 请求
+func (client *Client) HTTPUpload(
+	uri string,
+	payload io.Reader,
+	key, filename string,
+	length int64,
+) (resp []byte, err error) {
+	// 头部大小
+	bodyBuffer := new(bytes.Buffer)
+	bodyWriter := multipart.NewWriter(bodyBuffer)
+	_, err = bodyWriter.CreateFormFile(key, path.Base(filename))
+	if err != nil {
+		return
+	}
+	// 尾部
+	closeBuffer := bytes.NewBufferString(fmt.Sprintf("\r\n--%s--\r\n", bodyWriter.Boundary()))
+
+	newUrl, err := client.applyAccessToken(uri, url.Values{})
+	if err != nil {
+		return
+	}
+
+	reader := io.MultiReader(bodyBuffer, payload, closeBuffer)
+	req, err := http.NewRequest(http.MethodPost, client.serverUrl+newUrl, ioutil.NopCloser(reader))
+	if err != nil {
+		return
+	}
+	req.TransferEncoding = []string{"identity"}
+	req.Header.Add("Content-Type", bodyWriter.FormDataContentType())
+	req.ContentLength = length + int64(closeBuffer.Len()) + int64(bodyBuffer.Len())
+
+	return client.httpDo(req)
 }
 
 //HTTPPost POST 请求

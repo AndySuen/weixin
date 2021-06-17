@@ -3,6 +3,7 @@ package invoice_api
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 
@@ -42,6 +43,19 @@ func TestInvoice(t *testing.T) {
 	// 	require.Equal(t, nil, err)
 	// }
 	///////////////////////////// debug
+
+	{
+		file, err := os.Open(test.InvoicePdf)
+		require.Empty(t, err)
+		defer file.Close()
+
+		fi, err := file.Stat()
+		require.Empty(t, err)
+
+		mediaID, err := invoiceApi.PlatformSetpdf("fapiao.pdf", fi.Size(), file)
+		require.Equal(t, nil, err)
+		fmt.Printf("media id %s\n", mediaID)
+	}
 
 	{
 		cardID, err := invoiceApi.PlatformCreateCard(&CreateCardObj{

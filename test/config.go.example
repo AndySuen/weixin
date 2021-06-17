@@ -26,4 +26,5 @@ const (
 	InvoiceCustomUrlName     = "XXX公司"
 	InvoiceCustomURL         = "https://www.xxx.com"
 	InvoiceCustomUrlSubTitle = "XXX"
+	InvoicePdf               = "fapiao.pdf"
 )
