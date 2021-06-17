@@ -22,6 +22,7 @@ const (
 
 	// 发票
 	InvoicePayee             = "深圳市XXX信息技术有限公司"
+	InvoicePhone             = "13800138000"
 	InvoiceType              = "广东省增值税普通发票"
 	InvoiceCustomUrlName     = "XXX公司"
 	InvoiceCustomURL         = "https://www.xxx.com"

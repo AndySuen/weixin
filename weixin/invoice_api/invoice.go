@@ -305,6 +305,74 @@ func (api *InvoiceApi) PlatformSetpdf(filename string, length int64, content io.
 	return
 }
 
+type InvoiceInsertCardExtItem struct {
+	Name  string `json:"name,omitempty"` // 项目的名称
+	Price int    `json:"price"`          // 项目的单价
+	Num   int    `json:"num,omitempty"`  // 项目的数量
+	Unit  string `json:"unit,omitempty"` // 项目的单位，如个
+}
+
+type InvoiceInsertCardExt struct {
+	NonceStr string `json:"nonce_str"` // 随机字符串，防止重复
+	UserCard struct {
+		InvoiceUserData *InvoiceInsertCardExtUser `json:"invoice_user_data"` // 用户信息结构体
+	} `json:"user_card"` // 用户信息结构体
+}
+
+type InvoiceInsertCardExtUser struct {
+	Fee                   int                        `json:"fee"`                                // 发票的金额，以分为单位
+	Title                 string                     `json:"title"`                              // 发票的抬头
+	BillingTime           int                        `json:"billing_time"`                       // 发票的开票时间，为10位时间戳（utc+8）
+	BillingNO             string                     `json:"billing_no"`                         // 发票的发票代码
+	BillingCode           string                     `json:"billing_code"`                       // 发票的发票号码
+	CheckCode             string                     `json:"check_code"`                         // 校验码，发票pdf右上角，开票日期下的校验码
+	FeeWithoutTax         int                        `json:"fee_without_tax"`                    // 不含税金额，以分为单位
+	Tax                   int                        `json:"tax"`                                // 税额，以分为单位
+	SPdfMediaID           string                     `json:"s_pdf_media_id"`                     // 发票pdf文件上传到微信发票平台后，会生成一个发票s_media_id，该s_media_id可以直接用于关联发票PDF和发票卡券。发票上传参考“ 3 上传PDF ”一节
+	STripPdfMediaID       string                     `json:"s_trip_pdf_media_id,omitempty"`      // 其它消费附件的PDF，如行程单、水单等，PDF上传方式参考“ 3 上传PDF ”一节
+	BuyerNumber           string                     `json:"buyer_number,omitempty"`             // 购买方纳税人识别号
+	BuyerAddressAndPhone  string                     `json:"buyer_address_and_phone,omitempty"`  // 购买方地址、电话
+	BuyerBankAccount      string                     `json:"buyer_bank_account,omitempty"`       // 购买方开户行及账号
+	SellerNumber          string                     `json:"seller_number,omitempty"`            // 销售方纳税人识别号
+	SellerAddressAndPhone string                     `json:"seller_address_and_phone,omitempty"` // 销售方地址、电话
+	SellerBankAccount     string                     `json:"seller_bank_account,omitempty"`      // 销售方开户行及账号
+	Remarks               string                     `json:"remarks,omitempty"`                  // 备注，发票右下角初
+	Cashier               string                     `json:"cashier,omitempty"`                  // 收款人，发票左下角处
+	Maker                 string                     `json:"maker,omitempty"`                    // 开票人，发票下方处
+	Info                  []InvoiceInsertCardExtItem `json:"info"`                               //	商品详情结构
+}
+
+type InvoiceInsertObj struct {
+	OrderID string                `json:"order_id"` // 发票order_id，既商户给用户授权开票的订单号
+	CardID  string                `json:"card_id"`  // 发票card_id
+	Appid   string                `json:"appid"`    // 该订单号授权时使用的appid，一般为商户appid
+	CardExt *InvoiceInsertCardExt `json:"card_ext"` // 发票具体内容
+}
+
+type InvoiceInsertResult struct {
+	Code    string `json:"code"`    // 发票code
+	OpenID  string `json:"openid"`  // 获得发票用户的openid
+	UnionID string `json:"unionid"` // 只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段
+}
+
+/*
+将电子发票卡券插入用户卡包
+本接口由开票平台或自建平台商户调用。对用户已经授权过的开票请求，开票平台可以使用本接口将发票制成发票卡券放入用户的微信卡包中
+See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Invoicing_Platform_API_List.html
+POST https://api.weixin.qq.com/card/invoice/insert?access_token={access_token}
+*/
+func (api *InvoiceApi) InsertRaw(payload []byte) (resp []byte, err error) {
+	return api.Client.HTTPPost(apiInsert, bytes.NewReader(payload), "application/json;charset=utf-8")
+}
+func (api *InvoiceApi) Insert(param *InvoiceInsertObj) (*InvoiceInsertResult, error) {
+	var result InvoiceInsertResult
+	err := utils.ApiPostWrapper(api.PlatformCreateCardRaw, param, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 /*
 统一开票接口-开具蓝票
 对于使用微信电子发票开票接入能力的商户，在公众号后台选择任何一家开票平台的套餐，都可以使用本接口实现电子发票的开具
@@ -343,16 +411,6 @@ POST https://api.weixin.qq.com/card/invoice/platform/getpdf?action=get_url&acces
 */
 func (api *InvoiceApi) PlatformGetpdf(payload []byte) (resp []byte, err error) {
 	return api.Client.HTTPPost(apiPlatformGetpdf, bytes.NewReader(payload), "application/json;charset=utf-8")
-}
-
-/*
-将电子发票卡券插入用户卡包
-本接口由开票平台或自建平台商户调用。对用户已经授权过的开票请求，开票平台可以使用本接口将发票制成发票卡券放入用户的微信卡包中
-See: https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Invoicing_Platform_API_List.html
-POST https://api.weixin.qq.com/card/invoice/insert?access_token={access_token}
-*/
-func (api *InvoiceApi) Insert(payload []byte) (resp []byte, err error) {
-	return api.Client.HTTPPost(apiInsert, bytes.NewReader(payload), "application/json;charset=utf-8")
 }
 
 /*
