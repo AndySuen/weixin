@@ -136,12 +136,17 @@ func (client *Client) HTTPUpload(
 
 //HTTPPost POST 请求
 func (client *Client) HTTPPost(uri string, payload io.Reader, contentType string) (resp []byte, err error) {
+	buf := &bytes.Buffer{}
+	tee := io.TeeReader(payload, buf)
+	reader1, _ := ioutil.ReadAll(tee)
+	fmt.Println("debug: ", string(reader1))
+
 	newUrl, err := client.applyAccessToken(uri, url.Values{})
 	if err != nil {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, client.serverUrl+newUrl, payload)
+	req, err := http.NewRequest(http.MethodPost, client.serverUrl+newUrl, buf)
 	if err != nil {
 		return
 	}

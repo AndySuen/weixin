@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 )
 
@@ -10,6 +11,7 @@ func ApiPostWrapper(api func([]byte) ([]byte, error), obj interface{}, result in
 	if err != nil {
 		return err
 	}
+	fmt.Println("xx ", string(body))
 
 	resp, err := api(body)
 	if err != nil {

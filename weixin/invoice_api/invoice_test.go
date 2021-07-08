@@ -63,14 +63,14 @@ func TestPlatformCreateCard(t *testing.T) {
 		Payee: test.InvoicePayee,
 		Type:  test.InvoiceType,
 		BaseInfo: &CreateCardBaseInfo{
-			Title:                "汽车通用服务发票",
+			Title:                test.InvoiceCustomUrlName,
 			CustomUrlName:        test.InvoiceCustomUrlName,
 			CustomURL:            test.InvoiceCustomURL,
 			CustomUrlSubTitle:    test.InvoiceCustomUrlSubTitle,
 			PromotionUrlName:     "查看其他",
 			PromotionURL:         "https://www.baidu.com",
 			PromotionUrlSubTitle: "详情",
-			LogoUrl:              "https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png",
+			LogoUrl:              "https://mmbiz.qpic.cn/mmbiz_png/5tTVBJAGiap2TWlw0pPpbVtE80xH4sUs4u1aPZOlKHgPNS3sKm1CpJM3aLKd36yLreXqAHenD3q8QU3Hovpjv0g/0",
 		},
 	})
 	require.Equal(t, nil, err)
@@ -80,9 +80,17 @@ func TestPlatformCreateCard(t *testing.T) {
 func TestInvoiceInsert(t *testing.T) {
 	api := newInvoiceApi()
 
+	billingTime := 0
+	{
+		layout := "2006-01-02"
+		tm, err := time.Parse(layout, "2021-06-23")
+		require.Equal(t, nil, err)
+		billingTime = int(tm.Unix())
+	}
+
 	param := &InvoiceInsertObj{
-		OrderID: "1623934539819863381",
-		CardID:  "pWVnF6HIt6_NNMm4NvlNhrUWBWZc",
+		OrderID: "1624612433713210184",
+		CardID:  "p-mcP1FC6QHZ515goRP3CsXZcXmI",
 		Appid:   test.OfficialAccountAppid,
 		CardExt: &InvoiceInsertCardExt{
 			NonceStr: fmt.Sprintf("%d", time.Now().UnixNano()),
@@ -90,23 +98,28 @@ func TestInvoiceInsert(t *testing.T) {
 				InvoiceUserData *InvoiceInsertCardExtUser `json:"invoice_user_data"`
 			}{
 				InvoiceUserData: &InvoiceInsertCardExtUser{
-					Fee:           209300,
-					Title:         test.InvoicePayee,
-					BillingTime:   int(time.Now().Unix()),
-					BillingNO:     "47516482",
-					BillingCode:   "012002000511",
-					CheckCode:     "58626678892273709512",
-					FeeWithoutTax: 197453,
-					Tax:           11847,
-					SPdfMediaID:   "2164102706656625645",
-					Info: []InvoiceInsertCardExtItem{
-						{
-							Name:  "洗车",
-							Price: 1,
-							Num:   1,
-							Unit:  "次",
-						},
-					},
+					Fee:           10,
+					Title:         "邱金武",
+					BillingTime:   billingTime,
+					BillingNO:     "044032000211",
+					BillingCode:   "62522141",
+					CheckCode:     "85073690672647647833",
+					FeeWithoutTax: 9,
+					Tax:           1,
+					SPdfMediaID:   "71381497449443328",
+					// Cashier:               "方婷",
+					// Maker:                 "朱芷娆",
+					// SellerNumber:          "91440300MA5EKEKU9G",
+					// SellerBankAccount:     "中国银行华润城支行 774469529787",
+					// SellerAddressAndPhone: "深圳市宝安区西乡街道蚝业社区宝安互联网产业基地A区1栋3B08 0755-26406220",
+					// Info: []InvoiceInsertCardExtItem{
+					// 	{
+					// 		Name:  "*信息技术服务*平台服务费",
+					// 		Price: 10,
+					// 		Num:   1,
+					// 		Unit:  "次",
+					// 	},
+					// },
 				},
 			},
 		},
@@ -121,6 +134,45 @@ func TestInvoiceInsert(t *testing.T) {
 
 }
 
+func TestRejectInsert(t *testing.T) {
+	api := newInvoiceApi()
+
+	err := api.RejectInsert(&RejectInsertObj{
+		OrderID: "1624605258318629788",
+		SPappID: "d3gxMTY5NGJiNDI4YTMyZTg4X0jdlhfLZft3pZEI0pLVYp3CRPzlu2kW_06OUzJGyaZ3",
+		Reason:  "就是不开",
+	})
+	require.Equal(t, nil, err)
+}
+
+func TestSetAuthField(t *testing.T) {
+	api := newInvoiceApi()
+	param := &AuthFieldObj{
+		UserField: &AuthUserField{
+			ShowTitle:    1,
+			ShowPhone:    1,
+			ShowEmail:    0,
+			RequirePhone: 1,
+			RequireEmail: 0,
+		},
+		BizField: &AuthBizField{
+			ShowTitle:       1,
+			ShowTaxNO:       1,
+			ShowAddr:        1,
+			ShowPhone:       1,
+			ShowBankType:    1,
+			ShowBankNO:      1,
+			RequireTaxNO:    1,
+			RequireAddr:     0,
+			RequirePhone:    0,
+			RequireBankType: 0,
+			RequireBankNO:   0,
+		},
+	}
+	err := api.SetAuthField(param)
+	require.Equal(t, nil, err)
+}
+
 func TestInvoice(t *testing.T) {
 	api := newInvoiceApi()
 
@@ -131,14 +183,6 @@ func TestInvoice(t *testing.T) {
 	// 	})
 	// 	require.Equal(t, nil, err)
 	// 	fmt.Println(result.InvoiceStatus)
-	// }
-	// {
-	// 	err := api.RejectInsert(&RejectInsertObj{
-	// 		OrderID: "1623894036798956962",
-	// 		SPappID: "d3g1OTg2NGE5ZTU3ODIyOWVhX_oiY7-5OuzNHme3fHyMQQWjstgWqHfPcktQ40c-H73D",
-	// 		Reason:  "some reason",
-	// 	})
-	// 	require.Equal(t, nil, err)
 	// }
 	///////////////////////////// debug
 
@@ -167,7 +211,7 @@ func TestInvoice(t *testing.T) {
 
 		result, err := api.GetAuthUrl(&AuthUrlObj{
 			SPappID:   spappID,
-			Money:     209300,
+			Money:     10,
 			Source:    "web",
 			OrderID:   orderID,
 			Timestamp: time.Now().Unix(),

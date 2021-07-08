@@ -103,6 +103,58 @@ func (api *InvoiceApi) GetContact() (*SetbizattrObj, error) {
 	return result.Contact, nil
 }
 
+// https://developers.weixin.qq.com/doc/offiaccount/WeChat_Invoice/E_Invoice/Vendor_API_List.html#9
+// 当用户使用type=1的类型的授权页时，可以使用本接口设置授权页上需要用户填写的信息。若使用type=0或type=2类型的授权页，无需调用本接口。本接口为一次性设置，后续除非在需要调整页面字段时才需要再次调用。
+// 注意，设置为显示状态的字段均为必填字段，用户若不填写将无法进入后续流程
+
+type AuthFieldObj struct {
+	UserField *AuthUserField `json:"user_field,"`
+	BizField  *AuthBizField  `json:"biz_field,omitempty"`
+}
+
+type AuthCustomField struct {
+	Key       string `json:"key"`
+	IsRequire int    `json:"is_require,omitempty"` // 0：否，1：是， 默认为0
+	Notice    string `json:"notice"`
+}
+
+type AuthUserField struct {
+	ShowTitle    int               `json:"show_title"`    // 是否填写抬头，0为否，1为是
+	ShowPhone    int               `json:"show_phone"`    // 是否填写电话号码，0为否，1为是
+	ShowEmail    int               `json:"show_email"`    // 是否填写邮箱，0为否，1为是
+	RequirePhone int               `json:"require_phone"` // 电话号码是否必填,0为否，1为是
+	RequireEmail int               `json:"require_email"` // 邮箱是否必填，0位否，1为是
+	CustomFields []AuthCustomField `json:"custom_field,omitempty"`
+}
+
+type AuthBizField struct {
+	ShowTitle       int               `json:"show_title"`        // 是否填写抬头，0为否，1为是
+	ShowTaxNO       int               `json:"show_tax_no"`       // 是否填写税号，0为否，1为是
+	ShowAddr        int               `json:"show_addr"`         // 是否填写单位地址，0为否，1为是
+	ShowPhone       int               `json:"show_phone"`        // 是否填写电话号码，0为否，1为是
+	ShowBankType    int               `json:"show_bank_type"`    // 是否填写开户银行，0为否，1为是
+	ShowBankNO      int               `json:"show_bank_no"`      // 是否填写银行帐号，0为否，1为是
+	RequireTaxNO    int               `json:"require_tax_no"`    // 税号是否必填，0为否，1为是
+	RequireAddr     int               `json:"require_addr"`      // 单位地址是否必填，0为否，1为是
+	RequirePhone    int               `json:"require_phone"`     // 电话号码是否必填，0为否，1为是
+	RequireBankType int               `json:"require_bank_type"` // 开户类型是否必填，0为否，1为是
+	RequireBankNO   int               `json:"require_bank_no"`   // 税号是否必填，0为否，1为是
+	CustomFields    []AuthCustomField `json:"custom_field,omitempty"`
+}
+
+func (api *InvoiceApi) SetAuthField(param *AuthFieldObj) error {
+	params := url.Values{}
+	params.Add("action", "set_auth_field")
+
+	payload := &struct {
+		AuthField *AuthFieldObj `json:"auth_field"`
+	}{
+		AuthField: param,
+	}
+
+	return utils.ApiPostWrapperEx(api.SetbizattrRaw, payload, params, nil)
+}
+
 /*
 获取自身的开票平台识别码
 开票平台可以通过此接口获得本开票平台的预开票url，进而获取s_pappid。开票平台将该s_pappid并透传给商户，商户可以通过该s_pappid参数在微信电子发票方案中标识出为自身提供开票服务的开票平台
@@ -339,7 +391,7 @@ type InvoiceInsertCardExtUser struct {
 	Remarks               string                     `json:"remarks,omitempty"`                  // 备注，发票右下角初
 	Cashier               string                     `json:"cashier,omitempty"`                  // 收款人，发票左下角处
 	Maker                 string                     `json:"maker,omitempty"`                    // 开票人，发票下方处
-	Info                  []InvoiceInsertCardExtItem `json:"info"`                               //	商品详情结构
+	Info                  []InvoiceInsertCardExtItem `json:"info,omitempty"`                     //	商品详情结构
 }
 
 type InvoiceInsertObj struct {
