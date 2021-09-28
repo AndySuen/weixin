@@ -4,6 +4,8 @@ import (
 	"context"
 	"io/ioutil"
 	"net/url"
+
+	"github.com/lixinio/weixin/utils"
 )
 
 const (
@@ -13,9 +15,12 @@ const (
 	apiRelease     = "/wxa/release"
 )
 
-type CommonResp struct {
-	Errcode int    `json:"errcode"`
-	Errmsg  string `json:"errmsg"`
+type AuthorizerApi struct {
+	*utils.Client
+}
+
+func NewApi(client *utils.Client) *AuthorizerApi {
+	return &AuthorizerApi{Client: client}
 }
 
 /*
@@ -25,8 +30,8 @@ type CommonResp struct {
 https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/2.0/api/code/commit.html
 POST https://api.weixin.qq.com/wxa/commit?access_token=ACCESS_TOKEN
 */
-func (api *Authorizer) Commit(ctx context.Context, templateID string, extJson string, userVersion string, userDesc string) error {
-	return api.Client.HTTPPostJson(ctx, apiCommit, map[string]string{
+func (api *AuthorizerApi) Commit(ctx context.Context, templateID int32, extJson string, userVersion string, userDesc string) error {
+	return api.Client.HTTPPostJson(ctx, apiCommit, map[string]interface{}{
 		"template_id":  templateID,
 		"ext_json":     extJson,
 		"user_version": userVersion,
@@ -40,7 +45,7 @@ func (api *Authorizer) Commit(ctx context.Context, templateID string, extJson st
 https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/2.0/api/code/get_qrcode.html
 GET https://api.weixin.qq.com/wxa/get_qrcode?access_token=ACCESS_TOKEN&path=page%2Findex%3Faction%3D1
 */
-func (api *Authorizer) GetQrcode(ctx context.Context, path string) ([]byte, error) {
+func (api *AuthorizerApi) GetQrcode(ctx context.Context, path string) ([]byte, error) {
 	resp, err := api.Client.HTTPGetRaw(ctx, apiGetQrcode, func(params url.Values) {
 		params.Add("path", path)
 	})
@@ -62,10 +67,10 @@ func (api *Authorizer) GetQrcode(ctx context.Context, path string) ([]byte, erro
 https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/2.0/api/code/submit_audit.html
 POST https://api.weixin.qq.com/wxa/submit_audit?access_token=ACCESS_TOKEN
 */
-func (api *Authorizer) SubmitAudit(ctx context.Context, auditParams map[string]interface{}) (int64, error) {
+func (api *AuthorizerApi) SubmitAudit(ctx context.Context, auditParams map[string]interface{}) (int32, error) {
 	result := struct {
-		*CommonResp
-		AuditID int64 `json:"auditid"`
+		utils.WeixinError
+		AuditID int32 `json:"auditid"`
 	}{}
 	err := api.Client.HTTPPostJson(ctx, apiSubmitAudit, auditParams, &result)
 	if err != nil {
@@ -80,6 +85,6 @@ func (api *Authorizer) SubmitAudit(ctx context.Context, auditParams map[string]i
 https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/2.0/api/code/release.html
 POST https://api.weixin.qq.com/wxa/release?access_token=ACCESS_TOKEN
 */
-func (api *Authorizer) Release(ctx context.Context) error {
+func (api *AuthorizerApi) Release(ctx context.Context) error {
 	return api.Client.HTTPPostJson(ctx, apiRelease, struct{}{}, nil)
 }
