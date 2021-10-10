@@ -65,7 +65,7 @@ func TestGetQrcode(t *testing.T) {
 
 func TestSubmitAudit(t *testing.T) {
 	api := NewApi(initAuthorizer())
-	_, err := api.SubmitAudit(context.Background(), map[string]interface{}{})
+	_, err := api.SubmitAudit(context.Background(), &AuditParams{})
 	require.Empty(t, err)
 }
 
